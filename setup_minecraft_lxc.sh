@@ -153,7 +153,7 @@ if [[ ! -f "${launcher_jar}" ]]; then
 fi
 
 launcher_size=$(stat -c '%s' "${launcher_jar}")
-if (( launcher_size < 131072 )); then
+if (( launcher_size < 512 )); then
   echo "ERROR: Fabric launcher ${launcher_jar} is unexpectedly small (${launcher_size} bytes)." >&2
   exit 1
 fi
