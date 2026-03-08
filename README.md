@@ -5,10 +5,10 @@
 <p align="center"><em>Minecraft Server on Proxmox</em></p>
 
 <p align="center">
-  <a href="https://github.com/TimInTech/minecraft-server-Proxmox/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/TimInTech/minecraft-server-Proxmox?style=flat&color=yellow"></a>
-  <a href="https://github.com/TimInTech/minecraft-server-Proxmox/fork"><img alt="GitHub Forks" src="https://img.shields.io/github/forks/TimInTech/minecraft-server-Proxmox?style=flat&color=blue"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/TimInTech/minecraft-server-Proxmox?style=flat"></a>
-  <a href="https://github.com/TimInTech/minecraft-server-Proxmox/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/TimInTech/minecraft-server-Proxmox?include_prereleases&style=flat"></a>
+  <a href="https://github.com/jojohnathon/minecraft-server-Proxmox/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/jojohnathon/minecraft-server-Proxmox?style=flat&color=yellow"></a>
+  <a href="https://github.com/jojohnathon/minecraft-server-Proxmox/fork"><img alt="GitHub Forks" src="https://img.shields.io/github/forks/jojohnathon/minecraft-server-Proxmox?style=flat&color=blue"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/jojohnathon/minecraft-server-Proxmox?style=flat"></a>
+  <a href="https://github.com/jojohnathon/minecraft-server-Proxmox/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/jojohnathon/minecraft-server-Proxmox?include_prereleases&style=flat"></a>
   <a href="https://buymeacoffee.com/timintech"><img alt="Buy Me A Coffee" src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=000&labelColor=grey&style=flat"></a>
 </p>
 
@@ -20,7 +20,7 @@
 - Simulation Guide: [SIMULATION.md](SIMULATION.md)
 - Bedrock Networking: [docs/BEDROCK_NETWORKING.md](docs/BEDROCK_NETWORKING.md)
 - Copilot Workflow: [.github/copilot-instructions.md](.github/copilot-instructions.md)
-- Issues — https://github.com/TimInTech/minecraft-server-Proxmox/issues
+- Issues — https://github.com/jojohnathon/minecraft-server-Proxmox/issues
 
 ---
 
@@ -64,7 +64,7 @@ Stable. VM and LXC tested. Bedrock updates remain manual.
 ### VM (DHCP)
 
 ```bash
-wget https://raw.githubusercontent.com/TimInTech/minecraft-server-Proxmox/main/setup_minecraft.sh
+wget https://raw.githubusercontent.com/jojohnathon/minecraft-server-Proxmox/main/setup_minecraft.sh
 chmod +x setup_minecraft.sh
 ./setup_minecraft.sh
 sudo -u minecraft screen -r minecraft
@@ -90,7 +90,7 @@ sudo netplan apply
 ### LXC/CT
 
 ```bash
-wget https://raw.githubusercontent.com/TimInTech/minecraft-server-Proxmox/main/setup_minecraft_lxc.sh
+wget https://raw.githubusercontent.com/jojohnathon/minecraft-server-Proxmox/main/setup_minecraft_lxc.sh
 chmod +x setup_minecraft_lxc.sh
 ./setup_minecraft_lxc.sh
 runuser -u minecraft -- tmux attach -t minecraft
@@ -101,7 +101,7 @@ runuser -u minecraft -- tmux attach -t minecraft
 ### Bedrock
 
 ```bash
-wget https://raw.githubusercontent.com/TimInTech/minecraft-server-Proxmox/main/setup_bedrock.sh
+wget https://raw.githubusercontent.com/jojohnathon/minecraft-server-Proxmox/main/setup_bedrock.sh
 chmod +x setup_bedrock.sh
 ./setup_bedrock.sh
 sudo -u minecraft screen -r bedrock
