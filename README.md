@@ -33,7 +33,7 @@
 - Network: Bridged NIC (vmbr0), ports 25565/TCP and 19132/UDP
 
 Java 21 is required. If OpenJDK 21 is missing in your repositories, the installers automatically fall back to Amazon Corretto 21 (APT with signed-by keyring).
-**Note:** UFW must be installed before running any `ufw` commands. JVM memory is auto-sized by the installer (see [Configuration](#configuration)).
+**Note:** The LXC installer now installs `ufw` itself, validates guest networking before downloading Fabric, and auto-sizes JVM memory (see [Configuration](#configuration)).
 
 ---
 
@@ -53,6 +53,7 @@ This repository provisions a performant Minecraft server (Java & Bedrock) on Pro
 ![Bash](https://img.shields.io/badge/Bash-%E2%9C%94-4EAA25?logo=gnubash&logoColor=white)
 ![Systemd](https://img.shields.io/badge/systemd-%E2%9C%94-FFDD00?logo=linux&logoColor=black)
 ![Screen](https://img.shields.io/badge/screen-%E2%9C%94-0077C2?logo=gnu&logoColor=white)
+![tmux](https://img.shields.io/badge/tmux-%E2%9C%94-1BB91F?logo=tmux&logoColor=white)
 
 ## 📊 Status
 
@@ -92,8 +93,10 @@ sudo netplan apply
 wget https://raw.githubusercontent.com/TimInTech/minecraft-server-Proxmox/main/setup_minecraft_lxc.sh
 chmod +x setup_minecraft_lxc.sh
 ./setup_minecraft_lxc.sh
-sudo -u minecraft screen -r minecraft
+runuser -u minecraft -- tmux attach -t minecraft
 ```
+
+> The LXC installer provisions Fabric, validates guest IPv4/default-route/DNS/HTTPS reachability, and adds `25565/tcp` to UFW without forcing UFW to be enabled.
 
 ### Bedrock
 
@@ -165,21 +168,28 @@ crontab -e
 ### JVM memory (Java)
 
 
-The installer sets `Xms ≈ RAM/4` and `Xmx ≈ RAM/2` with floors `1024M/2048M` and an `Xmx` cap of `≤16G`. Override in `/opt/minecraft/start.sh`.
+The VM installer sets `Xms ≈ RAM/4` and `Xmx ≈ RAM/2` with floors `1024M/2048M` and an `Xmx` cap of `≤16G`. The LXC installer sets `Xms = Xmx ≈ RAM/2` with the same `2048M` floor and `≤16G` cap, then applies Aikar's G1GC flags. Override in `/opt/minecraft/start.sh`.
 
 ## Integrity & Firewall
 
-**Java (PaperMC):**
+**Java VM (PaperMC):**
 
 - Paper download is verified via **SHA256** in installer/updater.
 - Minimum size `server.jar > 5 MB` to avoid saving HTML error pages.
+
+**Java LXC (Fabric):**
+
+- Fabric metadata is resolved from the official Fabric meta API.
+- The Fabric installer JAR is verified via published **SHA256** and minimum-size checks.
+- Generated `fabric-server-launch.jar` and `server.jar` are checked after install.
+- The installer fails fast if the container is missing IPv4, a default route, nameservers, DNS resolution, gateway reachability, or outbound HTTPS to required upstreams.
 
 **Bedrock:**
 
 - Default: `REQUIRE_BEDROCK_SHA=1`. Set `REQUIRED_BEDROCK_SHA256=<sha>`. Override with `REQUIRE_BEDROCK_SHA=0`.
 - The installer validates MIME type via HTTP HEAD (application/zip|octet-stream), checks size, and tests the ZIP via `unzip -tq` before extracting.
 
-**screen socket (Debian 12/13):**
+**screen socket (Debian 12/13, VM/Bedrock paths):**
 
 ```bash
 sudo install -d -m 0775 -o root -g utmp /run/screen
@@ -196,6 +206,8 @@ sudo ufw allow 19132/udp
 sudo ufw enable
 ```
 
+LXC note: `setup_minecraft_lxc.sh` installs `ufw`, adds `25565/tcp`, and verifies the rule when UFW is active. It does not enable UFW automatically, and it cannot validate Proxmox host firewalls or router/NAT rules from inside the container.
+
 ## 🕹 Admin/Commands
 
 See **[SERVER_COMMANDS.md](SERVER_COMMANDS.md)**.
@@ -207,7 +219,8 @@ If this project saves you time, consider supporting continued maintenance via [B
 ## Troubleshooting
 
 - Not enough RAM in LXC → reduce values in `start.sh`.
-- Missing `/run/screen` → see [Integrity & Firewall](#integrity--firewall) section for setup commands.
+- Missing `/run/screen` on VM/Bedrock installs → see [Integrity & Firewall](#integrity--firewall) section for setup commands.
+- LXC networking check failed → verify the container has a bridged NIC, a non-loopback IPv4 address, a default gateway, working DNS, and outbound HTTPS access to Fabric and package repositories.
 - Bedrock ZIP MIME-Type issue → revisit the Mojang download page.
 
 Use the PR template. Do not execute anything in this workspace. See **[SIMULATION.md](SIMULATION.md)** for safe workflow details and **[.github/copilot-instructions.md](.github/copilot-instructions.md)** for step-by-step Copilot CLI workflow.
@@ -216,6 +229,8 @@ Use the PR template. Do not execute anything in this workspace. See **[SIMULATIO
 ## References
 
 - PaperMC: [https://papermc.io/](https://papermc.io/)
+- Fabric Meta: [https://meta.fabricmc.net/](https://meta.fabricmc.net/)
+- Fabric Maven: [https://maven.fabricmc.net/](https://maven.fabricmc.net/)
 - Proxmox Wiki: [https://pve.proxmox.com/wiki/Main_Page](https://pve.proxmox.com/wiki/Main_Page)
 - Mojang Bedrock Server: [https://www.minecraft.net/en-us/download/server/bedrock](https://www.minecraft.net/en-us/download/server/bedrock)
 

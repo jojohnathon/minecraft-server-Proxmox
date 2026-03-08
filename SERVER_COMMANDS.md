@@ -20,30 +20,38 @@ cd /opt/minecraft
 ./start.sh
 ```
 
-To run in the background via `screen`:
+To run in the background via `screen` on the VM/Paper path:
 
 ```bash
 cd /opt/minecraft
 screen -S minecraft ./start.sh
 ```
 
+For the LXC/Fabric path, use `tmux`:
+
+```bash
+runuser -u minecraft -- tmux new-session -d -s minecraft 'cd /opt/minecraft && ./start.sh'
+```
+
 Reconnect to the session:
 
 ```bash
+runuser -u minecraft -- tmux attach -t minecraft   # LXC/Fabric
 screen -r minecraft
 ```
 
 Detach without stopping the server:
 
 ```bash
-CTRL + A, then D
+tmux: CTRL + B, then D
+screen: CTRL + A, then D
 ```
 
 ---
 
 ## 🔁 Stopping the Server (from Terminal)
 
-In the screen session with the server running:
+In the active `tmux` or `screen` session with the server running:
 
 ```bash
 stop
@@ -87,10 +95,10 @@ Edit the `start.sh` file:
 nano /opt/minecraft/start.sh
 ```
 
-Example modification:
+Example modification for the LXC/Fabric launcher:
 
 ```bash
-java -Xms4G -Xmx6G -jar server.jar nogui
+java -Xms4G -Xmx4G -jar fabric-server-launch.jar nogui
 ```
 
 ---
@@ -98,7 +106,8 @@ java -Xms4G -Xmx6G -jar server.jar nogui
 ## 🧼 Log Files
 
 ```bash
-cd /opt/minecraft/logs/
+tail -f /opt/minecraft/minecraft.log   # LXC/Fabric
+cd /opt/minecraft/logs/                # VM/Paper
 ```
 
 ---

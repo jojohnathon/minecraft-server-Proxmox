@@ -11,7 +11,7 @@ Quick links:
 - Option 2: Java server in LXC/Container
   - chmod +x setup_minecraft_lxc.sh
   - ./setup_minecraft_lxc.sh
-  - screen -r minecraft
+  - runuser -u minecraft -- tmux attach -t minecraft
 - Option 3: Bedrock server
   - chmod +x setup_bedrock.sh
   - ./setup_bedrock.sh
@@ -61,21 +61,23 @@ Idempotency:
 
 ### setup_minecraft_lxc.sh (LXC/Container – Java Edition)
 
-Similar to the VM installer but uses apt without sudo (typical for privileged containers) and does not write an update.sh. It:
+Similar to the VM installer but uses apt without sudo (typical for privileged containers), targets Fabric instead of Paper, and does not write an update.sh. It:
 
-- Updates packages, installs screen, wget, curl, jq, unzip.
+- Updates packages and installs `tmux`, `ufw`, `wget`, `curl`, `jq`, `unzip`, `iproute2`, and `iputils-ping`.
+- Runs guest-side networking sanity checks before installation: requires a non-loopback IPv4 address, default IPv4 route, reachable default gateway, configured nameservers, working DNS resolution for Fabric endpoints, and outbound HTTPS access to required upstreams.
 - Installs OpenJDK 21 or falls back to Amazon Corretto 21 via APT keyring.
-- Sets up /opt/minecraft, downloads latest PaperMC server.jar with SHA256 verification and minimum size >5MB.
-- Accepts EULA and creates start.sh.
-- Ensures `/run/screen` exists (0775, root:utmp), persists it via systemd-tmpfiles, and starts screen session minecraft as the minecraft user.
+- Sets up `/opt/minecraft`, resolves the latest stable Fabric-compatible Minecraft version and loader, downloads the Fabric installer JAR with SHA256 verification and minimum-size checks, and runs the installer to generate `fabric-server-launch.jar` plus the backing `server.jar`.
+- Validates the generated launch artifacts, accepts the EULA, and creates `start.sh` with Aikar's G1GC flags.
+- Adds `25565/tcp` to UFW and verifies the rule when UFW is active, but does not enable UFW automatically.
+- Starts a detached `tmux` session named `minecraft` as the minecraft user.
 
 Expected external state:
 
-- /opt/minecraft with server.jar, eula.txt, start.sh; screen session; port 25565 open in the container.
+- /opt/minecraft with `fabric-server-launch.jar`, `server.jar`, `eula.txt`, `start.sh`, and `minecraft.log`; detached `tmux` session `minecraft`; UFW allow rule for `25565/tcp`.
 
 Notes for LXC:
 
-- Ensure container has network access and adequate memory/CPU limits.
+- Ensure container has a bridged NIC, guest IPv4 connectivity, working DNS, and adequate memory/CPU limits.
 - For unprivileged containers, file permissions and Java availability may vary.
 
 ### setup_bedrock.sh (VM/CT – Bedrock Edition)
@@ -134,12 +136,12 @@ Simple reminder script that prints: "Manual Bedrock update required. Visit offic
 
 - Back up /opt/minecraft and /opt/minecraft-bedrock before updates.
 - Use tar archives and retain multiple days; see README for systemd timer or cron examples.
-- To remove a server (cleanup): stop the process (screen -S SESSION_NAME -X stuff 'stop\n'); then remove the /opt directory.
+- To remove a server (cleanup): stop the process from its active console session (`screen` for VM/Bedrock, `tmux` for LXC Java), then remove the /opt directory.
 
 ## Risks and safeguards
 
 - Package installation modifies system state; run scripts only on intended hosts.
-- Network downloads from third parties (PaperMC, Mojang) can fail or change.
+- Network downloads from third parties (PaperMC, Fabric, Mojang) can fail or change.
 - Running as root via systemd is simple but less secure; prefer a dedicated non-root user in production.
 
 ## Simulation policy
@@ -152,7 +154,9 @@ In this workspace:
 
 ## Integrity & Firewall
 
-> Integrity: Java downloads are SHA256-verified via PaperMC API with a minimum-size safeguard.  
+> Integrity: VM Java downloads are SHA256-verified via the PaperMC API with a minimum-size safeguard. LXC Fabric installs verify the Fabric installer SHA256, enforce minimum-size checks, and validate the generated launch artifacts.  
 > Bedrock checksum is enforced by default. Export `REQUIRED_BEDROCK_SHA256=<sha256>` or set `REQUIRE_BEDROCK_SHA=0` to override.
 
 For Debian 12/13, ensure `/run/screen` exists with `root:utmp` and `0775`. You can persist it via systemd-tmpfiles.
+
+LXC networking checks are guest-only. They cannot prove Proxmox host firewall rules, bridge ACLs, or router/NAT forwarding from inside the container.
