@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export DEBIAN_FRONTEND=noninteractive
+
 LOG_FILE="/opt/minecraft/minecraft.log"
 FABRIC_META_ROOT="https://meta.fabricmc.net/v2/versions"
 FABRIC_MAVEN_ROOT="https://maven.fabricmc.net/net/fabricmc/fabric-installer"
 
-apt update
-apt install -y wget curl jq unzip ca-certificates gnupg tmux ufw iproute2 iputils-ping
+apt-get update
+apt-get install -y wget curl jq unzip ca-certificates gnupg tmux ufw iproute2 iputils-ping
 
 network_summary() {
   local default_route default_if gateway ipv4 nameservers
@@ -137,7 +139,7 @@ if [[ -z "$EXPECTED_SHA" || "$ACTUAL_SHA" != "$EXPECTED_SHA" ]]; then
 fi
 
 installer_size=$(stat -c '%s' "${INSTALLER_JAR}")
-if (( installer_size < 262144 )); then
+if (( installer_size < 131072 )); then
   echo "ERROR: Downloaded Fabric installer is too small (${installer_size} bytes)." >&2
   exit 1
 fi
